@@ -6,52 +6,16 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
+const adicionarAluno = require("./adicionar-aluno-nota");
+const somarMedia = require("./somar-media");
+const adicionarMediaSituacao = require("./adicionar-media-situacao");
+const quantidadeSituacao = require("./quantidade-situacao");
 function perguntarUsuario(pergunta) {
   return new Promise((resolve) => {
     rl.question(pergunta, (resposta) => {
       resolve(resposta);
     });
   });
-}
-
-function adicionarAluno(lista, nome, not1, not2, not3) {
-  const objeto = {
-    nome: nome,
-    notas: [Number(not1), Number(not2), Number(not3)],
-  };
-
-  lista.push(objeto);
-}
-
-function somarMedia(lista) {
-  const somarNotas = lista.reduce((acc, notaStr) => acc + Number(notaStr), 0);
-  const media = somarNotas / lista.length;
-  const mediaArredondada = media.toFixed(2);
-  const toNumber = Number(mediaArredondada);
-
-  return toNumber;
-}
-
-function addMedia(lista, result, situacao) {
-  const addIndex = lista.map((obj, index) => ({
-    ...obj,
-    media: (index = result),
-    situacao: (index = situacao),
-  }));
-
-  console.log(addIndex);
-}
-
-function situacaoAluno(situacao) {
-  if (situacao >= 7) {
-    return "Aprovado";
-  }
-  if (situacao >= 5 && situacao < 7) {
-    return "Recuperação";
-  }
-  if (situacao < 5) {
-    return "Reprovado";
-  }
 }
 
 let listaAlunos = [];
@@ -71,28 +35,50 @@ async function main() {
       console.log("\nValor acima de '10', favor digitar outro valor!\n");
       continue;
     } else {
-      console.log("\nAluno cadastrado com sucesso!?\n");
+      console.log("\nAluno cadastrado com sucesso!\n");
     }
 
     adicionarAluno(listaAlunos, nomeAluno, nota1, nota2, nota3);
-    console.log(listaAlunos);
 
     const cadastrarNovoAluno = await perguntarUsuario(
       "Deseja cadastrar outro aluno? (s / n) "
     );
 
     if (cadastrarNovoAluno == "n") {
-      console.log("===== Boletim Final =====");
-
-      const media = somarMedia([nota1, nota2, nota3]);
-      const situacao = situacaoAluno(media);
-
-      addMedia(listaAlunos, media, situacao);
-
+      fechar = true;
       rl.close();
-      return;
     }
   }
+
+  console.log("\n====== Boletim Final ======");
+
+  listaAlunos = adicionarMediaSituacao(listaAlunos);
+
+  console.log(listaAlunos);
+
+  const listaMedias = listaAlunos.map((aluno) => {
+    return aluno.media;
+  });
+  const mediaGeralTurma = somarMedia(listaMedias);
+
+  const maiorMedia = Math.max(...listaMedias);
+  const menorMedia = Math.min(...listaMedias);
+
+  const totalAlunos = listaAlunos.length;
+
+  const quantidadeAprov = quantidadeSituacao(listaAlunos, "Aprovado");
+  const quantidadeRec = quantidadeSituacao(listaAlunos, "Recuperação");
+  const quantidadeRep = quantidadeSituacao(listaAlunos, "Reprovado");
+
+  console.log(`
+===== Estatísticas da Turma =====
+Média Geral da Turma: ${mediaGeralTurma}
+Maior média: ${maiorMedia}
+Menor média: ${menorMedia}
+Total de aluno: ${totalAlunos}
+Aprovados: ${quantidadeAprov}
+Em Recuperação: ${quantidadeRec}
+Reprovados: ${quantidadeRep}`);
 }
 
 main();
